@@ -18,7 +18,7 @@ type Program struct {
 	Body        string `json:"body,omitempty"`
 }
 
-func start_dgraph(option int, idx string) string {
+func start_dgraph(option int, resp string) string {
 
 	conn, err := grpc.Dial("127.0.0.1:9080", grpc.WithInsecure())
 	if err != nil {
@@ -30,12 +30,11 @@ func start_dgraph(option int, idx string) string {
 	dg := dgo.NewDgraphClient(dc)
 
 	if option == 1 { // Mutation
-		p := Program{
-			Uid:         "_:veronica",
-			Name:        "Veronica",
-			ProgramName: "Add",
-			Body:        "def sum(a, b):\n\treturn a + b",
-		}
+
+		// se convierte el idx(string) -> en una estructura Program
+		data := Program{}
+		json.Unmarshal([]byte(resp), &data)
+		fmt.Println(data)
 
 		op := &api.Operation{}
 		op.Schema = `
@@ -53,18 +52,22 @@ func start_dgraph(option int, idx string) string {
 		mu := &api.Mutation{
 			CommitNow: true,
 		}
-		pb, err := json.Marshal(p)
+		pb, err := json.Marshal(data)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		mu.SetJson = pb
 		dg.NewTxn().Mutate(ctx, mu)
+		return "{success: Successfully added the new programa.}"
+
 	}
 
 	if option == 2 { // Query
 		// Assigned uids for nodes which were created would be returned in the assigned.Uids map.
 		//variables := map[string]string{"$id1": assigned.Uids["alice"]}
+
+		idx := string(resp)
 		variables := map[string]string{"$idx": idx}
 		q := `query Me($idx: string){
 			me(func: uid($idx)) {

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -48,21 +49,16 @@ func (rs postsResource) List(w http.ResponseWriter, r *http.Request) { //inactiv
 
 // Request Handler - POST /posts - Create a new post.
 func (rs postsResource) Create(w http.ResponseWriter, r *http.Request) { //inactive
-	resp, err := http.Post("https://jsonplaceholder.typicode.com/posts", "application/json", r.Body)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	defer resp.Body.Close()
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	//fmt.Println(reqBody)
+	resp := strings.NewReader(start_dgraph(1, string(reqBody)))
 
 	w.Header().Set("Content-Type", "application/json")
 
-	if _, err := io.Copy(w, resp.Body); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if _, err := io.Copy(w, resp); err != nil {
 		return
 	}
+
 }
 
 func PostCtx(next http.Handler) http.Handler { //inactive
