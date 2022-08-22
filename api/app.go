@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -11,7 +10,6 @@ import (
 )
 
 func main() {
-	fmt.Println("Holaaa")
 	port := "10000"
 
 	if fromEnv := os.Getenv("PORT"); fromEnv != "" {

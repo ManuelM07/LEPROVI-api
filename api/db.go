@@ -18,7 +18,7 @@ type Program struct {
 	Body        string `json:"body,omitempty"`
 }
 
-func start_dgraph(option int, resp string) string {
+func start_dgraph(option int, data_resp string) string {
 
 	conn, err := grpc.Dial("127.0.0.1:9080", grpc.WithInsecure())
 	if err != nil {
@@ -33,7 +33,7 @@ func start_dgraph(option int, resp string) string {
 
 		// se convierte el idx(string) -> en una estructura Program
 		data := Program{}
-		json.Unmarshal([]byte(resp), &data)
+		json.Unmarshal([]byte(data_resp), &data)
 		fmt.Println(data)
 
 		op := &api.Operation{}
@@ -63,16 +63,16 @@ func start_dgraph(option int, resp string) string {
 
 	}
 
+	idx := string(data_resp)
 	if option == 2 { // Query
 		// Assigned uids for nodes which were created would be returned in the assigned.Uids map.
 		//variables := map[string]string{"$id1": assigned.Uids["alice"]}
 
-		idx := string(resp)
 		variables := map[string]string{"$idx": idx}
 		q := `query Me($idx: string){
 			me(func: uid($idx)) {
-			  	uid
-			  	name
+				uid
+				name
 				program_name
 				body
 			}
@@ -94,7 +94,33 @@ func start_dgraph(option int, resp string) string {
 			log.Fatal(err)
 		}
 
-		fmt.Println(string(resp.Json))
+		return string(resp.Json)
+	}
+
+	if option == 3 {
+		q := `{
+			foo(func: has(program_name)) {
+			  uid
+			  name
+			  program_name
+			}
+		  }`
+
+		resp, err := dg.NewTxn().Query(context.Background(), q) //QueryWithVars, dg.NewTxn().Query(context.Background(), q)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		type Root struct {
+			Fo []Program `json:"foo"`
+		}
+
+		var r Root
+		err = json.Unmarshal(resp.Json, &r)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		return string(resp.Json)
 	}
 	return ""

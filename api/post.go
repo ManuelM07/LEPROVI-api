@@ -20,37 +20,29 @@ func (rs postsResource) Routes() chi.Router {
 
 	r.Route("/{id}", func(r chi.Router) {
 		r.Use(PostCtx)
-		r.Get("/", rs.Get)       // GET /posts/{id} - Read a single post by :id.
-		r.Put("/", rs.Update)    // PUT /posts/{id} - Update a single post by :id.
-		r.Delete("/", rs.Delete) // DELETE /posts/{id} - Delete a single post by :id.
+		r.Get("/", rs.Get) // GET /posts/{id} - Read a single post by :id.
+		//r.Put("/", rs.Update)    // PUT /posts/{id} - Update a single post by :id.
+		//r.Delete("/", rs.Delete) // DELETE /posts/{id} - Delete a single post by :id.
+		// post - run
 	})
 
 	return r
 }
 
 // Request Handler - GET /posts - Read a list of posts.
-func (rs postsResource) List(w http.ResponseWriter, r *http.Request) { //inactive
-	resp, err := http.Get("https://jsonplaceholder.typicode.com/posts")
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	defer resp.Body.Close()
+func (rs postsResource) List(w http.ResponseWriter, r *http.Request) {
+	resp := strings.NewReader(start_dgraph(3, ""))
 
 	w.Header().Set("Content-Type", "application/json")
 
-	if _, err := io.Copy(w, resp.Body); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if _, err := io.Copy(w, resp); err != nil {
 		return
 	}
 }
 
 // Request Handler - POST /posts - Create a new post.
-func (rs postsResource) Create(w http.ResponseWriter, r *http.Request) { //inactive
+func (rs postsResource) Create(w http.ResponseWriter, r *http.Request) {
 	reqBody, _ := ioutil.ReadAll(r.Body)
-	//fmt.Println(reqBody)
 	resp := strings.NewReader(start_dgraph(1, string(reqBody)))
 
 	w.Header().Set("Content-Type", "application/json")
@@ -61,7 +53,7 @@ func (rs postsResource) Create(w http.ResponseWriter, r *http.Request) { //inact
 
 }
 
-func PostCtx(next http.Handler) http.Handler { //inactive
+func PostCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), "id", chi.URLParam(r, "id"))
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -69,7 +61,7 @@ func PostCtx(next http.Handler) http.Handler { //inactive
 }
 
 // Request Handler - GET /posts/{id} - Read a single post by :id.
-func (rs postsResource) Get(w http.ResponseWriter, r *http.Request) { //active
+func (rs postsResource) Get(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value("id").(string) //obtener id
 
 	resp := strings.NewReader(start_dgraph(2, id))
@@ -78,65 +70,6 @@ func (rs postsResource) Get(w http.ResponseWriter, r *http.Request) { //active
 
 	if _, err := io.Copy(w, resp); err != nil {
 		//http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-// Request Handler - PUT /posts/{id} - Update a single post by :id.
-func (rs postsResource) Update(w http.ResponseWriter, r *http.Request) { //inactive
-	id := r.Context().Value("id").(string)
-	client := &http.Client{}
-
-	req, err := http.NewRequest("PUT", "https://jsonplaceholder.typicode.com/posts/"+id, r.Body)
-	req.Header.Add("Content-Type", "application/json")
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp, err := client.Do(req)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	w.Header().Set("Content-Type", "application/json")
-
-	if _, err := io.Copy(w, resp.Body); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-// Request Handler - DELETE /posts/{id} - Delete a single post by :id.
-func (rs postsResource) Delete(w http.ResponseWriter, r *http.Request) { //inactive
-	id := r.Context().Value("id").(string)
-	client := &http.Client{}
-
-	req, err := http.NewRequest("DELETE", "https://jsonplaceholder.typicode.com/posts/"+id, nil)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp, err := client.Do(req)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	defer resp.Body.Close()
-
-	w.Header().Set("Content-Type", "application/json")
-
-	if _, err := io.Copy(w, resp.Body); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
