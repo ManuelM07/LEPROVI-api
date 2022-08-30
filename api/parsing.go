@@ -39,17 +39,20 @@ func startParsing() {
 	for k := 0; k < len(nodes); k++ {
 		if nodes[k].name == "NodeMath" {
 			//fmt.Println(nodes[k].inputs)
-			fmt.Println(mathOperation("body", "1", fmt.Sprintf("%v", nodes[k].data.(map[string]interface{})["data"].(map[string]interface{})["method"]), nodes[k].inputs.(map[string]interface{}))) // para acceder a la clave de un map de varios niveles
+			fmt.Println(mathOperation("body", k)) // para acceder a la clave de un map de varios niveles
 		} else if nodes[k].name == "NodeAssing" {
 			fmt.Println(assing(k, nodes[k].inputs.(map[string]interface{})))
 		} else if nodes[k].name == "NodePrint" {
 			fmt.Println(print(nodes[k].inputs.(map[string]interface{})))
+			//fmt.Println(findInput(nodes[k].inputs.(map[string]interface{})["input_1"]))
 		}
 	}
 
 }
 
-func mathOperation(option string, id string, operation string, inputs map[string]interface{}) string {
+func mathOperation(option string, idOutput int) string {
+	operation := fmt.Sprintf("%v", nodes[idOutput].data.(map[string]interface{})["data"].(map[string]interface{})["method"])
+	inputs := nodes[idOutput].inputs.(map[string]interface{})
 	if option == "body" {
 		if operation == "add" {
 			return "def add(a, b):\n\treturn a+b\n"
@@ -57,18 +60,18 @@ func mathOperation(option string, id string, operation string, inputs map[string
 			return "def less(a, b):\n\treturn a-b\n"
 		}
 	} else {
-		node1 := (inputs["input_1"].(map[string]interface{})["connections"].([]interface{})[0].(map[string]interface{})["node"])
-		node2 := (inputs["input_2"].(map[string]interface{})["connections"].([]interface{})[0].(map[string]interface{})["node"])
-		return fmt.Sprintf("%s(%s, %s)", operation, nodes[searchNode(fmt.Sprintf("%v", node1))].data.(map[string]interface{})["url"], nodes[searchNode(fmt.Sprintf("%v", node2))].data.(map[string]interface{})["url"]) // fmt.Sprintf("%v", node1) permite convertir una interfaz en string
+		node1 := findInput(inputs["input_1"])
+		node2 := findInput(inputs["input_2"])
+		return fmt.Sprintf("%s(%s, %s)", operation, nodes[findNode(node1)].data.(map[string]interface{})["url"], nodes[findNode(node2)].data.(map[string]interface{})["url"])
 	}
 	return ""
 }
 
 func assing(pos int, inputs map[string]interface{}) string {
-	node1 := (inputs["input_1"].(map[string]interface{})["connections"].([]interface{})[0].(map[string]interface{})["node"])
-	idNode := searchNode(fmt.Sprintf("%v", node1))
+	node1 := findInput(inputs["input_1"])
+	idNode := findNode(node1)
 	if nodes[idNode].name == "NodeMath" {
-		answer := mathOperation("n", "", fmt.Sprintf("%v", nodes[idNode].data.(map[string]interface{})["data"].(map[string]interface{})["method"]), nodes[idNode].inputs.(map[string]interface{}))
+		answer := mathOperation("n", idNode)
 		varName := nodes[pos].data.(map[string]interface{})["url"]
 		return fmt.Sprintf("%s = %s", varName, answer)
 	}
@@ -76,10 +79,10 @@ func assing(pos int, inputs map[string]interface{}) string {
 }
 
 func print(inputs map[string]interface{}) string {
-	node1 := (inputs["input_1"].(map[string]interface{})["connections"].([]interface{})[0].(map[string]interface{})["node"])
-	idNode := searchNode(fmt.Sprintf("%v", node1))
+	node1 := findInput(inputs["input_1"])
+	idNode := findNode(node1)
 	if nodes[idNode].name == "NodeMath" {
-		answer := mathOperation("n", "", fmt.Sprintf("%v", nodes[idNode].data.(map[string]interface{})["data"].(map[string]interface{})["method"]), nodes[idNode].inputs.(map[string]interface{}))
+		answer := mathOperation("n", idNode)
 		return fmt.Sprintf("print(%s)", answer)
 	} else if nodes[idNode].name == "NodeAssing" {
 		varName := nodes[idNode].data.(map[string]interface{})["url"]
@@ -88,14 +91,23 @@ func print(inputs map[string]interface{}) string {
 	return ""
 }
 
+//--------------------------- Funciones auxiliares ---------------------------\\
+
 /**
 * Esta función se encarga de buscar un nodo en un array(slice) de nodos
  */
-func searchNode(id string) int {
+func findNode(id string) int {
 	for k := 0; k < len(nodes); k++ {
 		if nodes[k].id == id {
 			return k
 		}
 	}
 	return -1
+}
+
+/**
+* Esta función se encarga de buscar un nodo input en una interface de inputs
+ */
+func findInput(input interface{}) string {
+	return fmt.Sprintf("%v", input.(map[string]interface{})["connections"].([]interface{})[0].(map[string]interface{})["node"]) // fmt.Sprintf("%v", node1) permite convertir una interfaz en string
 }
