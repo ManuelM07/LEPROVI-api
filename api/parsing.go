@@ -87,3 +87,15 @@ func print(inputs map[string]interface{}) string {
 	}
 	return ""
 }
+
+/**
+* Esta función se encarga de buscar un nodo en un array(slice) de nodos
+ */
+func searchNode(id string) int {
+	for k := 0; k < len(nodes); k++ {
+		if nodes[k].id == id {
+			return k
+		}
+	}
+	return -1
+}
