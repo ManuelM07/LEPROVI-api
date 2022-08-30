@@ -17,6 +17,7 @@ func (rs postsResource) Routes() chi.Router {
 
 	r.Get("/", rs.List)    // GET /posts - Read a list of posts.
 	r.Post("/", rs.Create) // POST /posts - Create a new post.
+	r.Post("/run", rs.Run) // POST /posts - Run program.
 
 	r.Route("/{id}", func(r chi.Router) {
 		r.Use(PostCtx)
@@ -50,6 +51,21 @@ func (rs postsResource) Create(w http.ResponseWriter, r *http.Request) {
 	if _, err := io.Copy(w, resp); err != nil {
 		return
 	}
+
+}
+
+// Run
+func (rs postsResource) Run(w http.ResponseWriter, r *http.Request) {
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	//fmt.Println(string(reqBody))
+	mapJson(string(reqBody))
+	//resp := strings.NewReader(start_dgraph(1, string(reqBody)))
+
+	w.Header().Set("Content-Type", "application/json")
+
+	/*if _, err := io.Copy(w, resp); err != nil {
+		return
+	}*/
 
 }
 
