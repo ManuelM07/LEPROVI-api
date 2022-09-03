@@ -6,6 +6,7 @@ require (
 	github.com/dgraph-io/dgo/v210 v210.0.0-20220113041351-ba0e5dfc4c3e
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/cors v1.2.1
+	github.com/joho/godotenv v1.4.0
 	google.golang.org/grpc v1.48.0
 )
 

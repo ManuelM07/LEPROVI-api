@@ -20,7 +20,7 @@ type Node struct {
 	//father 	interface{}
 }
 
-func mapJson(data string) {
+func mapJson(data string) string {
 	nodes = nil
 
 	var m map[string]interface{}
@@ -37,10 +37,10 @@ func mapJson(data string) {
 		}
 		nodes = append(nodes, node)
 	}
-	startParsing()
+	return startParsing()
 }
 
-func startParsing() {
+func startParsing() string {
 	nodes = sortNodes(nodes)
 	var code string
 	//fmt.Println((nodes))
@@ -60,7 +60,7 @@ func startParsing() {
 			code += nodeFor(k)
 		}
 	}
-	fmt.Println(code)
+	return code
 	//fmt.Println(sortNodes(nodes))
 
 }
@@ -258,6 +258,9 @@ func sortNodes(nodeAux []Node) []Node {
 	return sort
 }
 
+/**
+* Esta función se encarga de eliminar un elemento de una lista
+ */
 func RemoveIndex(s []Node, index int) []Node {
 	if len(s) == 1 {
 		return nil
