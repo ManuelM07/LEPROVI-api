@@ -43,6 +43,9 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }
 
+/*
+Esta función retorna el valor de una variable de ambiente
+*/
 func goDotEnvVariable(key string) string {
 
 	// load .env file

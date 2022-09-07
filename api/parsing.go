@@ -20,6 +20,10 @@ type Node struct {
 	//father 	interface{}
 }
 
+/*
+Esta función se encarga de mapear el json(este antes fue convertido a string) que recibe desde el front
+sacando los elementos mas importantes y guardarlos en una estructura Node.
+*/
 func mapJson(data string) string {
 	nodes = nil
 
@@ -40,6 +44,11 @@ func mapJson(data string) string {
 	return startParsing()
 }
 
+/*
+Esta función se encarga de dar inicio al parsing, dependiendo el tipo de nodo, hace el llamado a la función
+correspondiente y concatenando su resultado en la variable de tipo string code, finalmente está función
+retorna la variable code, que contiene el codigo formado apartir de los nodos.
+*/
 func startParsing() string {
 	nodes = sortNodes(nodes)
 	var code string
@@ -143,9 +152,9 @@ func comparison(idOutput int) string {
 
 //--------------------------- Funciones auxiliares ---------------------------\\
 
-/**
-* Esta función se encarga de buscar la posición de un nodo en un array(slice) de nodos
- */
+/*
+Esta función se encarga de buscar la posición de un nodo en un array(slice) de nodos.
+*/
 func findNode(id string, nodesX []Node) int {
 	for k := 0; k < len(nodes); k++ {
 		if nodes[k].id == id {
@@ -155,16 +164,19 @@ func findNode(id string, nodesX []Node) int {
 	return -1
 }
 
-/**
-* Esta función se encarga de buscar un nodo input en una interface de inputs
- */
+/*
+Esta función se encarga de buscar un nodo input en una interface de inputs.
+*/
 func findInput(input interface{}) string {
 	return fmt.Sprintf("%v", input.(map[string]interface{})["connections"].([]interface{})[0].(map[string]interface{})["node"]) // fmt.Sprintf("%v", node1) permite convertir una interfaz en string
 }
 
-/**
-* Esta función se encarga de recibir un nodo y retornar su respuesta, dependiendo el tipo de nodo
- */
+/*
+Esta función se encarga de recibir un nodo y retornar su respuesta, dependiendo el tipo de nodo
+si es un nodo Number, retorna el numero asociado al nodo, en caso de que sea un nodo Assign,
+retorna la variable asociada al mismo, en caso de comparison o mathOperation se llama a la función
+correspondiente.
+*/
 func typeNode(node Node, posNode int) string {
 	nameNode := fmt.Sprintf("%v", node.name)
 	if nameNode == "NodeNumber" || nameNode == "NodeAssign" {
@@ -177,9 +189,9 @@ func typeNode(node Node, posNode int) string {
 	return ""
 }
 
-/**
-* Esta función se encarga de retornar el valor a ser asignado en la funcion assign
- */
+/*
+Esta función se encarga de retornar el valor a ser asignado en la funcion assign.
+*/
 func valueAssigned(idNode int) string {
 	return fmt.Sprintf("%v", nodes[idNode].data.(map[string]interface{})["url"])
 }
@@ -194,11 +206,12 @@ func ident() string {
 	return "	"
 }*/
 
-/**
-* Esta función se encarga de ordenar los nodos. Siendo C un conjunto de nodos,
-* C1, será el nodo que inicia las relación entre los nodos del conjunto y CN
-* el nodo que las finaliza
- */
+/*
+Esta función se encarga de ordenar los nodos. Siendo C un conjunto de nodos,
+C1, será el nodo que inicia las relación entre los nodos del conjunto y CN
+el nodo que las finaliza.
+Fanalmente retorna el conjunto de nodos ordenados.
+*/
 func sortNodes(nodeAux []Node) []Node {
 	var sort []Node
 	var posI int
@@ -258,9 +271,9 @@ func sortNodes(nodeAux []Node) []Node {
 	return sort
 }
 
-/**
-* Esta función se encarga de eliminar un elemento de una lista
- */
+/*
+Esta función se encarga de eliminar un elemento de una lista.
+*/
 func RemoveIndex(s []Node, index int) []Node {
 	if len(s) == 1 {
 		return nil

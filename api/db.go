@@ -29,7 +29,7 @@ func start_dgraph(option int, data_resp string) string {
 	dc := api.NewDgraphClient(conn)
 	dg := dgo.NewDgraphClient(dc)
 
-	if option == 1 { // Mutation
+	if option == 1 { // Mutation, se crea un nuevo programa
 
 		// se convierte el idx(string) -> en una estructura Program
 		data := Program{}
@@ -64,7 +64,7 @@ func start_dgraph(option int, data_resp string) string {
 	}
 
 	idx := string(data_resp)
-	if option == 2 { // Query
+	if option == 2 { // Query, obtiene un programa, lo filtra por su id
 		// Assigned uids for nodes which were created would be returned in the assigned.Uids map.
 		//variables := map[string]string{"$id1": assigned.Uids["alice"]}
 
@@ -78,9 +78,8 @@ func start_dgraph(option int, data_resp string) string {
 			}
 		}`
 
-		resp, err := dg.NewTxn().QueryWithVars(context.Background(), q, variables) //QueryWithVars, dg.NewTxn().Query(context.Background(), q)
+		resp, err := dg.NewTxn().QueryWithVars(context.Background(), q, variables)
 		if err != nil {
-			fmt.Println("Holaaa")
 			log.Fatal(err)
 		}
 
@@ -97,16 +96,17 @@ func start_dgraph(option int, data_resp string) string {
 		return string(resp.Json)
 	}
 
-	if option == 3 {
+	if option == 3 { // query, obtiene todos los programas almacenados en la base de datos, con la distinción de su nombre
 		q := `{
 			foo(func: has(program_name)) {
 			  uid
 			  name
 			  program_name
+			  body
 			}
 		  }`
 
-		resp, err := dg.NewTxn().Query(context.Background(), q) //QueryWithVars, dg.NewTxn().Query(context.Background(), q)
+		resp, err := dg.NewTxn().Query(context.Background(), q)
 		if err != nil {
 			log.Fatal(err)
 		}

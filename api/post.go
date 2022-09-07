@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -13,12 +14,17 @@ import (
 
 type postsResource struct{}
 
+type ProgramX struct {
+	Code string
+}
+
 func (rs postsResource) Routes() chi.Router {
 	r := chi.NewRouter()
 
-	r.Get("/", rs.List)    // GET /posts - Read a list of posts.
-	r.Post("/", rs.Create) // POST /posts - Create a new post.
-	r.Post("/run", rs.Run) // POST /posts - Run program.
+	r.Get("/", rs.List)               // GET /posts - Read a list of posts.
+	r.Post("/", rs.Create)            // POST /posts - Create a new post.
+	r.Post("/program", rs.GetProgram) // POST /posts - Get program.
+	r.Post("/run", rs.Run)            // POST /posts - Run program.
 	//r.Post("/code", rs.Code) // POST /posts - Run program.
 
 	r.Route("/{id}", func(r chi.Router) {
@@ -56,24 +62,40 @@ func (rs postsResource) Create(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Obtener programa
+func (rs postsResource) GetProgram(w http.ResponseWriter, r *http.Request) {
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	resp := strings.NewReader(mapJson(string(reqBody)))
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if _, err := io.Copy(w, resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+}
+
 // Run
 func (rs postsResource) Run(w http.ResponseWriter, r *http.Request) {
 	reqBody, _ := ioutil.ReadAll(r.Body)
-	//fmt.Println(string(reqBody))
-	respCode := mapJson(string(reqBody))
+	dataResp := ProgramX{}
+	json.Unmarshal([]byte(string(reqBody)), &dataResp)
+	//respCode := fmt.Sprintf("%s", reqBody)
 	languaje := "python3"
 	versionIndex := "4"
 
 	data := map[string]interface{}{
 		"clientId":     goDotEnvVariable("CLIENT_ID"),
 		"clientSecret": goDotEnvVariable("CLIENT_SECRET"),
-		"script":       respCode,
+		"script":       dataResp.Code,
 		"language":     languaje,
 		"versionIndex": versionIndex,
 	}
 
 	jsonData, _ := json.Marshal(data)
 	respData := strings.NewReader(string(jsonData))
+	fmt.Println((respData))
 
 	resp, err := http.Post("https://api.jdoodle.com/v1/execute", "application/json", respData)
 
@@ -84,19 +106,9 @@ func (rs postsResource) Run(w http.ResponseWriter, r *http.Request) {
 
 	defer resp.Body.Close()
 
-	req_body, _ := ioutil.ReadAll(resp.Body)
-	// se crea la nueva estructura, con el codigo y la salida de la ejecución
-	dataRun := map[string]interface{}{
-		"code":   respCode,
-		"output": string(req_body),
-	}
-
-	jsonDataRun, _ := json.Marshal(dataRun)
-	respDataRun := strings.NewReader(string(jsonDataRun))
-
 	w.Header().Set("Content-Type", "application/json")
 
-	if _, err := io.Copy(w, respDataRun); err != nil {
+	if _, err := io.Copy(w, resp.Body); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
