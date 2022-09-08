@@ -21,7 +21,7 @@ type Node struct {
 }
 
 /*
-Esta función se encarga de mapear el json(este antes fue convertido a string) que recibe desde el front
+Esta función se encarga de mapear el json(este antes fue convertido a string) que recibe desde el front,
 sacando los elementos mas importantes y guardarlos en una estructura Node.
 */
 func mapJson(data string) string {
@@ -216,13 +216,17 @@ func sortNodes(nodeAux []Node) []Node {
 	var sort []Node
 	var posI int
 	var isIf bool
-	n := -1 // n será una variable acumuladora, por cada nodo que se agregue a sort(Node), esta aumentará en 1
+	var father bool     // se usa para identificar si es un CN
+	var brothers []Node // es un slice de Node, donde se guardaran los hermanos para cada iteración
+	n := -1             // n será una variable acumuladora, por cada nodo que se agregue a sort(Node), esta aumentará en 1
 
 	for {
 		if len(nodeAux) == 1 { // Si queda un solo nodo, este se agrega y se rompe el ciclo
 			sort = append(sort, nodeAux[0])
 			break
 		} else if isIf && nodeAux[posI].name == "NodeElse" || !isIf && nodeAux[posI].inputs.(map[string]interface{})["input_1"] == nil { // se busca el padre del arbol
+			//if nodeAux[posI].name == "NodeAssign"
+			father = true
 			isIf = false
 			sort = append(sort, nodeAux[posI])
 			nodeAux = RemoveIndex(nodeAux, posI)
@@ -230,6 +234,7 @@ func sortNodes(nodeAux []Node) []Node {
 
 			thisNode := sort[n].outputs.(map[string]interface{})["output_1"]
 			for {
+				brothers = nil
 				if thisNode != nil { // Para tener un hermano, antes debe tener una salida
 					if len(thisNode.(map[string]interface{})["connections"].([]interface{})) == 0 { // si no tiene conexiones es porque es un nodo print, en este caso se cierra el ciclo
 						break
@@ -239,12 +244,24 @@ func sortNodes(nodeAux []Node) []Node {
 						if nodeAux[i].outputs.(map[string]interface{})["output_1"] == nil || len(nodeAux[i].outputs.(map[string]interface{})["output_1"].(map[string]interface{})["connections"].([]interface{})) != 0 {
 
 							if nodeAux[i].name != "NodePrint" && findInput(nodeAux[i].outputs.(map[string]interface{})["output_1"]) == thisOutput { // se verifica si la salida de X nodo es igual a la del nodo padre, si se cumple entonces son hermanos
-
-								sort = append(sort, nodeAux[i])
-								nodeAux = RemoveIndex(nodeAux, i)
-								n++
+								// Aqui ocurre un caso atipico con el Node assign, ya que existe la probabilidad de que su padre no haya sido agregado al slice.
+								if nodeAux[i].inputs == nil { // si no tiene input, esto quiere decir que es un hermano que no tiene padre, por lo anterior es un CN
+									brothers = append(brothers, nodeAux[i])
+								} else { // si tiene padre, esto implica que no es un CN, por lo anterior se rompe el ciclo y se sigue buscando el CN
+									brothers = nil
+									father = false
+									break
+								}
+								for j := 0; j < len(brothers); j++ {
+									sort = append(sort, brothers[j])
+									nodeAux = RemoveIndex(nodeAux, findNode(brothers[j].id, nodeAux))
+									n++
+								}
 							}
 						}
+					}
+					if !father { // como no es CN se rompe el otro ciclo
+						break
 					}
 
 					childNodePos := findNode(thisOutput, nodeAux)
@@ -280,3 +297,12 @@ func RemoveIndex(s []Node, index int) []Node {
 	}
 	return append(s[:index], s[index+1:]...)
 }
+
+/*
+{3 NodeComOp map[] map[output_1:map[connections:[map[node:1 output:input_2]]]] map[class:NodeComOp data:map[method:equals] html:NodeComOp id:3 inputs:map[] name:NodeComOp outputs:map[output_1:map[connections:[]]] pos_x:95 pos_y:318 typenode:vue]}
+{12 NodeAssign map[input_1:map[connections:[map[input:output_1 node:8]]]] map[output_1:map[connections:[map[node:1 output:input_1]]]] map[url:y]}
+{1 NodeIf map[input_1:map[connections:[map[input:output_1 node:12]]] input_2:map[connections:[map[input:output_1 node:3]]] input_3:map[connections:[map[input:output_1 node:4]]]] map[output_1:map[connections:[map[node:5 output:input_1]]] output_2:map[connections:[map[node:6 output:input_1]]]] map[url:1]}
+{5 NodeAssign map[input_1:map[connections:[map[input:output_1 node:1]]]] map[output_1:map[connections:[]]] map[url:x]} {6 NodeElse map[input_1:map[connections:[map[input:output_2 node:1]]]] map[output_1:map[connections:[map[node:7 output:input_1]]]] map[url:2]} {7 NodeAssign map[input_1:map[connections:[map[input:output_1 node:6]]]] map[output_1:map[connections:[map[node:11 output:input_1]]]] map[url:x]} {11 NodePrint map[input_1:map[connections:[map[input:output_1 node:7]]]] map[] map[]} {9 NodeNumber map[] map[output_1:map[connections:[map[node:8 output:input_1]]]] map[url:2]} {10 NodeNumber map[] map[output_1:map[connections:[map[node:8 output:input_2]]]] map[url:1]} {8 NodeMath map[input_1:map[connections:[map[input:output_1 node:9]]] input_2:map[connections:[map[input:output_1 node:10]]]] map[output_1:map[connections:[map[node:12 output:input_1]]]] map[class:NodeMath data:map[method:add] html:NodeMath id:8 inputs:map[input_1:map[connections:[]] input_2:map[connections:[]]] name:NodeMath outputs:map[output_1:map[connections:[]]] pos_x:226 pos_y:118 typenode:vue url:3]} {4 NodeNumber map[] map[output_1:map[connections:[map[node:1 output:input_3]]]] map[url:3]}
+*/
+//{10 NodeNumber map[] map[output_1:map[connections:[map[node:8 output:input_2]]]] map[url:1]}
+//{13 NodeMath map[input_1:map[connections:[map[input:output_1 node:14]]] input_2:map[connections:[map[input:output_1 node:15]]]] map[output_1:map[connections:[map[node:8 output:input_1]]]] map[class:NodeMath data:map[method:less] html:NodeMath id:13 inputs:map[input_1:map[connections:[]] input_2:map[connections:[]]] name:NodeMath outputs:map[output_1:map[connections:[]]] pos_x:53 pos_y:124 typenode:vue url:10]} {8 NodeMath map[input_1:map[connections:[map[input:output_1 node:13]]] input_2:map[connections:[map[input:output_1 node:10]]]] map[output_1:map[connections:[map[node:1 output:input_1]]]] map[class:NodeMath data:map[method:add] html:NodeMath id:8 inputs:map[input_1:map[connections:[]] input_2:map[connections:[]]] name:NodeMath outputs:map[output_1:map[connections:[]]] pos_x:226 pos_y:118 typenode:vue url:11]}
