@@ -15,7 +15,14 @@ import (
 type postsResource struct{}
 
 type ProgramX struct {
-	Code string
+	Code         string
+	Languaje     string
+	VersionIndex string
+}
+
+type ProgramUnCode struct {
+	Code     map[string]interface{}
+	Languaje string
 }
 
 func (rs postsResource) Routes() chi.Router {
@@ -65,7 +72,11 @@ func (rs postsResource) Create(w http.ResponseWriter, r *http.Request) {
 // Obtener programa
 func (rs postsResource) GetProgram(w http.ResponseWriter, r *http.Request) {
 	reqBody, _ := ioutil.ReadAll(r.Body)
-	resp := strings.NewReader(mapJson(string(reqBody)))
+	dataResp := ProgramUnCode{}
+	json.Unmarshal([]byte(string(reqBody)), &dataResp)
+
+	//resp := strings.NewReader(mapJson(string(reqBody)))
+	resp := strings.NewReader(mapJson(dataResp.Code, dataResp.Languaje))
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -82,15 +93,15 @@ func (rs postsResource) Run(w http.ResponseWriter, r *http.Request) {
 	dataResp := ProgramX{}
 	json.Unmarshal([]byte(string(reqBody)), &dataResp)
 	//respCode := fmt.Sprintf("%s", reqBody)
-	languaje := "python3"
-	versionIndex := "4"
+	//languaje := "nodejs" //python3
+	//versionIndex := "4" //4
 
 	data := map[string]interface{}{
 		"clientId":     goDotEnvVariable("CLIENT_ID"),
 		"clientSecret": goDotEnvVariable("CLIENT_SECRET"),
 		"script":       dataResp.Code,
-		"language":     languaje,
-		"versionIndex": versionIndex,
+		"language":     dataResp.Languaje,
+		"versionIndex": dataResp.VersionIndex,
 	}
 
 	jsonData, _ := json.Marshal(data)
