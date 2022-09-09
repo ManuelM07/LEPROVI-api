@@ -1,13 +1,13 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
 var nodes []Node
 var typeOperation = map[string]string{"add": "+", "less": "-", "mult": "*", "divide": "/", "module": "%"}                                   // se guardan todos los tipos de operaciones matematicas
 var typeComparison = map[string]string{"equals": "==", "greater": ">", "less": "<", "greaterOrE": ">=", "lessOrE": "<=", "different": "!="} // se guardan todos los operadores de comparación
+//var stringOperations = map[string]string{"len": "len", "greater": ">", "less": "<", "greaterOrE": ">="} // se guardan todos los operadores de comparación
 
 type Node struct {
 	id      string
@@ -22,13 +22,14 @@ type Node struct {
 Esta función se encarga de mapear el json(este antes fue convertido a string) que recibe desde el front,
 sacando los elementos mas importantes y guardarlos en una estructura Node.
 */
-func mapJson(data string) string {
+func mapJson(data map[string]interface{}, languaje string) string {
 	nodes = nil
+	fmt.Println("CODE:", data)
 
-	var m map[string]interface{}
-	json.Unmarshal([]byte(data), &m)
+	//var m map[string]interface{}
+	//json.Unmarshal([]byte(data), &m)
 
-	for key, element := range m {
+	for key, element := range data {
 
 		node := Node{
 			id:      key,
@@ -38,6 +39,9 @@ func mapJson(data string) string {
 			data:    element.(map[string]interface{})["data"],
 		}
 		nodes = append(nodes, node)
+	}
+	if languaje == "nodejs" {
+		return startParsingJs()
 	}
 	return startParsing()
 }
@@ -65,7 +69,9 @@ func startParsing() string {
 			code += nodeElse(k)
 		} else if nodes[k].name == "NodeFor" {
 			code += nodeFor(k)
-		}
+		} /*else if nodes[k].name == "NodeStringOp" {
+			code += stringOperations(k)
+		}*/
 	}
 	return code
 	//fmt.Println(sortNodes(nodes))
@@ -115,6 +121,8 @@ func print(inputs map[string]interface{}) string {
 	} else if nodes[idNode].name == "NodeFor" {
 		varName := valueAssigned(idNode)
 		return fmt.Sprintf("\tprint(%s)\n", varName)
+	} else if nodes[idNode].name == "NodeStringOp" {
+		return fmt.Sprintf("print(%s)\n", stringOperations(idNode))
 	}
 	return ""
 }
@@ -148,6 +156,21 @@ func comparison(idOutput int) string {
 	return typeComparison[comparison]
 }
 
+func stringOperations(idNode int) string {
+	operation := fmt.Sprintf("%v", nodes[idNode].data.(map[string]interface{})["data"].(map[string]interface{})["method"])
+	inputs := nodes[idNode].inputs.(map[string]interface{})
+	node1 := findInput(inputs["input_1"])
+	nodePos1 := findNode(node1, nodes)
+	if operation == "len" {
+		return fmt.Sprintf("len(%v)", typeNode(nodes[nodePos1], nodePos1))
+	} else if operation == "first" {
+		return fmt.Sprintf("%v[0]", typeNode(nodes[nodePos1], nodePos1))
+	} else if operation == "rest" {
+		return fmt.Sprintf("%v[1:]", typeNode(nodes[nodePos1], nodePos1))
+	}
+	return ""
+}
+
 //--------------------------- Funciones auxiliares ---------------------------\\
 
 /*
@@ -179,6 +202,8 @@ func typeNode(node Node, posNode int) string {
 	nameNode := fmt.Sprintf("%v", node.name)
 	if nameNode == "NodeNumber" || nameNode == "NodeAssign" {
 		return fmt.Sprintf("%v", node.data.(map[string]interface{})["url"])
+	} else if nameNode == "NodeString" {
+		return fmt.Sprintf("'%v'", node.data.(map[string]interface{})["url"])
 	} else if nameNode == "NodeComOp" {
 		return comparison(posNode)
 	} else if nameNode == "NodeMath" {
