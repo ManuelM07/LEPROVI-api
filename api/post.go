@@ -126,6 +126,7 @@ func (rs postsResource) Run(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Crea un nuevo contexto en ctx, el cual asocia el valor del id
 func PostCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), "id", chi.URLParam(r, "id"))

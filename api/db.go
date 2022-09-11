@@ -16,6 +16,7 @@ type Program struct {
 	Name        string `json:"name,omitempty"`
 	ProgramName string `json:"program_name,omitempty"`
 	Body        string `json:"body,omitempty"`
+	Languaje    string `json:"languaje,omitempty"`
 }
 
 func start_dgraph(option int, data_resp string) string {
@@ -38,9 +39,10 @@ func start_dgraph(option int, data_resp string) string {
 
 		op := &api.Operation{}
 		op.Schema = `
-			name: string @index(exact) .
+			Name: string @index(exact) .
 			ProgramName: string .
 			Body: string .
+			Languaje: string .
 		`
 
 		ctx := context.Background()
@@ -75,6 +77,7 @@ func start_dgraph(option int, data_resp string) string {
 				name
 				program_name
 				body
+				languaje
 			}
 		}`
 
@@ -103,6 +106,7 @@ func start_dgraph(option int, data_resp string) string {
 			  name
 			  program_name
 			  body
+			  languaje
 			}
 		  }`
 
