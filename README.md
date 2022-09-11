@@ -35,7 +35,7 @@ Note: All this must be done after you have cloned or downloaded the repository.
 
 # Run api
 
-Clone or downloaded repository.
+Cloned or downloaded repository.
 
 Stand on api folder:
 ```
