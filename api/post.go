@@ -32,7 +32,6 @@ func (rs postsResource) Routes() chi.Router {
 	r.Post("/", rs.Create)            // POST /posts - Create a new post.
 	r.Post("/program", rs.GetProgram) // POST /posts - Get program.
 	r.Post("/run", rs.Run)            // POST /posts - Run program.
-	//r.Post("/code", rs.Code) // POST /posts - Run program.
 
 	r.Route("/{id}", func(r chi.Router) {
 		r.Use(PostCtx)
@@ -87,7 +86,7 @@ func (rs postsResource) GetProgram(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Run
+// Run, ejecuta un nuevo programa haciendo uso de la api de jdoodle
 func (rs postsResource) Run(w http.ResponseWriter, r *http.Request) {
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	dataResp := ProgramX{}
@@ -143,7 +142,6 @@ func (rs postsResource) Get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if _, err := io.Copy(w, resp); err != nil {
-		//http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }

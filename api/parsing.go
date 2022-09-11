@@ -7,7 +7,6 @@ import (
 var nodes []Node
 var typeOperation = map[string]string{"add": "+", "less": "-", "mult": "*", "divide": "/", "module": "%"}                                   // se guardan todos los tipos de operaciones matematicas
 var typeComparison = map[string]string{"equals": "==", "greater": ">", "less": "<", "greaterOrE": ">=", "lessOrE": "<=", "different": "!="} // se guardan todos los operadores de comparación
-//var stringOperations = map[string]string{"len": "len", "greater": ">", "less": "<", "greaterOrE": ">="} // se guardan todos los operadores de comparación
 
 type Node struct {
 	id      string
@@ -24,10 +23,6 @@ sacando los elementos mas importantes y guardarlos en una estructura Node.
 */
 func mapJson(data map[string]interface{}, languaje string) string {
 	nodes = nil
-	fmt.Println("CODE:", data)
-
-	//var m map[string]interface{}
-	//json.Unmarshal([]byte(data), &m)
 
 	for key, element := range data {
 
@@ -37,6 +32,7 @@ func mapJson(data map[string]interface{}, languaje string) string {
 			inputs:  element.(map[string]interface{})["inputs"],
 			outputs: element.(map[string]interface{})["outputs"],
 			data:    element.(map[string]interface{})["data"],
+			//posY:    element.(map[string]interface{})["pos_y"]
 		}
 		nodes = append(nodes, node)
 	}
@@ -54,28 +50,22 @@ retorna la variable code, que contiene el codigo formado apartir de los nodos.
 func startParsing() string {
 	nodes = sortNodes(nodes)
 	var code string
-	//fmt.Println((nodes))
 	for k := 0; k < len(nodes); k++ {
 		if nodes[k].name == "NodeMath" {
-			code += mathOperation("body", k) // para acceder a la clave de un map de varios niveles
+			code += mathOperation("body", k)
 		} else if nodes[k].name == "NodeAssign" {
 			code += assign(k, nodes[k].inputs.(map[string]interface{}))
 		} else if nodes[k].name == "NodePrint" {
 			code += print(nodes[k].inputs.(map[string]interface{}))
-			//fmt.Println(findInput(nodes[k].inputs.(map[string]interface{})["input_1"]))
 		} else if nodes[k].name == "NodeIf" {
 			code += nodeIf(k)
 		} else if nodes[k].name == "NodeElse" {
 			code += nodeElse(k)
 		} else if nodes[k].name == "NodeFor" {
 			code += nodeFor(k)
-		} /*else if nodes[k].name == "NodeStringOp" {
-			code += stringOperations(k)
-		}*/
+		}
 	}
 	return code
-	//fmt.Println(sortNodes(nodes))
-
 }
 
 func mathOperation(option string, idOutput int) string {
@@ -100,10 +90,13 @@ func assign(pos int, inputs map[string]interface{}) string {
 		answer := mathOperation("", idNode)
 		return fmt.Sprintf("%s = %s\n", varName, answer)
 	} else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" || nodes[idNode].name == "NodeFor" {
-		answer := valueAssigned(idNode) // Para el caso del else, se puede reutilizar la funcion de nodeIf
+		answer := valueAssigned(idNode) // Para el caso del else y for, se puede reutilizar la funcion de nodeIf
 		return fmt.Sprintf("\t%s = %s\n", varName, answer)
-	} else if nodes[idNode].name == "NodeNumber" {
+	} else if nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" {
 		answer := valueAssigned(idNode)
+		return fmt.Sprintf("%s = %s\n", varName, answer)
+	} else if nodes[idNode].name == "NodeStringOp" {
+		answer := stringOperations(idNode)
 		return fmt.Sprintf("%s = %s\n", varName, answer)
 	}
 	return ""
@@ -115,12 +108,12 @@ func print(inputs map[string]interface{}) string {
 	if nodes[idNode].name == "NodeMath" {
 		answer := mathOperation("n", idNode)
 		return fmt.Sprintf("print(%s)\n", answer)
-	} else if nodes[idNode].name == "NodeAssign" || nodes[idNode].name == "NodeNumber" {
-		varName := valueAssigned(idNode)
-		return fmt.Sprintf("print(%s)\n", varName)
+	} else if nodes[idNode].name == "NodeAssign" || nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" {
+		answer := valueAssigned(idNode)
+		return fmt.Sprintf("print(%s)\n", answer)
 	} else if nodes[idNode].name == "NodeFor" {
-		varName := valueAssigned(idNode)
-		return fmt.Sprintf("\tprint(%s)\n", varName)
+		answer := valueAssigned(idNode)
+		return fmt.Sprintf("\tprint(%s)\n", answer)
 	} else if nodes[idNode].name == "NodeStringOp" {
 		return fmt.Sprintf("print(%s)\n", stringOperations(idNode))
 	}
@@ -186,7 +179,7 @@ func findNode(id string, nodesX []Node) int {
 }
 
 /*
-Esta función se encarga de buscar un nodo input en una interface de inputs.
+Esta función se encarga de buscar un nodo input en una interface de inputs, a su vez también sirve para buscar un nodo outputs.
 */
 func findInput(input interface{}) string {
 	return fmt.Sprintf("%v", input.(map[string]interface{})["connections"].([]interface{})[0].(map[string]interface{})["node"]) // fmt.Sprintf("%v", node1) permite convertir una interfaz en string
@@ -200,14 +193,14 @@ correspondiente.
 */
 func typeNode(node Node, posNode int) string {
 	nameNode := fmt.Sprintf("%v", node.name)
-	if nameNode == "NodeNumber" || nameNode == "NodeAssign" {
-		return fmt.Sprintf("%v", node.data.(map[string]interface{})["url"])
-	} else if nameNode == "NodeString" {
-		return fmt.Sprintf("'%v'", node.data.(map[string]interface{})["url"])
+	if nameNode == "NodeNumber" || nameNode == "NodeAssign" || nameNode == "NodeString" {
+		return valueAssigned(posNode)
 	} else if nameNode == "NodeComOp" {
 		return comparison(posNode)
 	} else if nameNode == "NodeMath" {
 		return mathOperation("", posNode)
+	} else if nameNode == "NodeStringOp" {
+		return stringOperations(posNode)
 	}
 	return ""
 }
@@ -215,8 +208,11 @@ func typeNode(node Node, posNode int) string {
 /*
 Esta función se encarga de retornar el valor a ser asignado en la funcion assign.
 */
-func valueAssigned(idNode int) string {
-	return fmt.Sprintf("%v", nodes[idNode].data.(map[string]interface{})["url"])
+func valueAssigned(posNode int) string {
+	if nodes[posNode].name == "NodeString" {
+		return fmt.Sprintf("'%v'", nodes[posNode].data.(map[string]interface{})["url"])
+	}
+	return fmt.Sprintf("%v", nodes[posNode].data.(map[string]interface{})["url"])
 }
 
 /*
