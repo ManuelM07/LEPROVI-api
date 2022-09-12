@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -105,7 +104,6 @@ func (rs postsResource) Run(w http.ResponseWriter, r *http.Request) {
 
 	jsonData, _ := json.Marshal(data)
 	respData := strings.NewReader(string(jsonData))
-	fmt.Println((respData))
 
 	resp, err := http.Post("https://api.jdoodle.com/v1/execute", "application/json", respData)
 

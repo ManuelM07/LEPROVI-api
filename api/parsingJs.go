@@ -10,11 +10,17 @@ correspondiente y concatenando su resultado en la variable de tipo string code, 
 retorna la variable code, que contiene el codigo formado apartir de los nodos.
 */
 func startParsingJs() string {
+	var countMath = map[string]int{"add": 0, "less": 0, "mult": 0, "divide": 0, "module": 0}
 	nodes = sortNodes(nodes)
 	var code string
+
 	for k := 0; k < len(nodes); k++ {
 		if nodes[k].name == "NodeMath" {
-			code += mathOperationJs("body", k)
+			methodNode := fmt.Sprintf("%v", nodes[k].data.(map[string]interface{})["data"].(map[string]interface{})["method"])
+			if countMath[methodNode] == 0 { // esta condicción se hace con el fin de controlar las funciones Math, si una función ya fue creada, no es necesario volver a crearla.
+				code += mathOperationJs("body", k)
+				countMath[methodNode] = 1
+			}
 		} else if nodes[k].name == "NodeAssign" {
 			code += assignJs(k, nodes[k].inputs.(map[string]interface{}))
 		} else if nodes[k].name == "NodePrint" {
@@ -55,7 +61,7 @@ func assignJs(pos int, inputs map[string]interface{}) string {
 	} else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" || nodes[idNode].name == "NodeFor" {
 		answer := valueAssigned(idNode) // Para el caso del else, se puede reutilizar la funcion de nodeIf
 		return fmt.Sprintf("\t%s = %s\n}\n", varName, answer)
-	} else if nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" {
+	} else if nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" || nodes[idNode].name == "NodeAssign" {
 		answer := valueAssigned(idNode)
 		return fmt.Sprintf("%s = %s\n", varName, answer)
 	} else if nodes[idNode].name == "NodeStringOp" {
@@ -74,9 +80,9 @@ func printJs(inputs map[string]interface{}) string {
 	} else if nodes[idNode].name == "NodeAssign" || nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" {
 		answer := valueAssigned(idNode)
 		return fmt.Sprintf("console.log(%s)\n", answer)
-	} else if nodes[idNode].name == "NodeFor" {
+	} else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" || nodes[idNode].name == "NodeFor" {
 		answer := valueAssigned(idNode)
-		return fmt.Sprintf("\tconsole.log(%s)\n}", answer)
+		return fmt.Sprintf("\tconsole.log(%s)\n}\n", answer)
 	} else if nodes[idNode].name == "NodeStringOp" {
 		return fmt.Sprintf("console.log(%s)\n", stringOperationsJs(idNode))
 	}

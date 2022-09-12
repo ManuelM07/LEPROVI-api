@@ -48,11 +48,17 @@ correspondiente y concatenando su resultado en la variable de tipo string code, 
 retorna la variable code, que contiene el codigo formado apartir de los nodos.
 */
 func startParsing() string {
+	var countMath = map[string]int{"add": 0, "less": 0, "mult": 0, "divide": 0, "module": 0}
 	nodes = sortNodes(nodes)
 	var code string
+
 	for k := 0; k < len(nodes); k++ {
 		if nodes[k].name == "NodeMath" {
-			code += mathOperation("body", k)
+			methodNode := fmt.Sprintf("%v", nodes[k].data.(map[string]interface{})["data"].(map[string]interface{})["method"])
+			if countMath[methodNode] == 0 { // esta condicción se hace con el fin de controlar las funciones Math, si una función ya fue creada, no es necesario volver a crearla.
+				code += mathOperation("body", k)
+				countMath[methodNode] = 1
+			}
 		} else if nodes[k].name == "NodeAssign" {
 			code += assign(k, nodes[k].inputs.(map[string]interface{}))
 		} else if nodes[k].name == "NodePrint" {
@@ -92,7 +98,7 @@ func assign(pos int, inputs map[string]interface{}) string {
 	} else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" || nodes[idNode].name == "NodeFor" {
 		answer := valueAssigned(idNode) // Para el caso del else y for, se puede reutilizar la funcion de nodeIf
 		return fmt.Sprintf("\t%s = %s\n", varName, answer)
-	} else if nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" {
+	} else if nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" || nodes[idNode].name == "NodeAssign" {
 		answer := valueAssigned(idNode)
 		return fmt.Sprintf("%s = %s\n", varName, answer)
 	} else if nodes[idNode].name == "NodeStringOp" {
@@ -111,7 +117,7 @@ func print(inputs map[string]interface{}) string {
 	} else if nodes[idNode].name == "NodeAssign" || nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" {
 		answer := valueAssigned(idNode)
 		return fmt.Sprintf("print(%s)\n", answer)
-	} else if nodes[idNode].name == "NodeFor" {
+	} else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" || nodes[idNode].name == "NodeFor" {
 		answer := valueAssigned(idNode)
 		return fmt.Sprintf("\tprint(%s)\n", answer)
 	} else if nodes[idNode].name == "NodeStringOp" {
@@ -225,7 +231,7 @@ func sortNodes(nodeAux []Node) []Node {
 	var sort []Node
 	var posI int
 	var isIf bool
-	var father bool     // se usa para identificar si es un CN
+	var father bool     // se usa para identificar si es un C1
 	var brothers []Node // es un slice de Node, donde se guardaran los hermanos para cada iteración
 	n := -1             // n será una variable acumuladora, por cada nodo que se agregue a sort(Node), esta aumentará en 1
 
@@ -253,9 +259,9 @@ func sortNodes(nodeAux []Node) []Node {
 						if nodeAux[i].outputs.(map[string]interface{})["output_1"] == nil || len(nodeAux[i].outputs.(map[string]interface{})["output_1"].(map[string]interface{})["connections"].([]interface{})) != 0 {
 
 							if nodeAux[i].name != "NodePrint" && findInput(nodeAux[i].outputs.(map[string]interface{})["output_1"]) == thisOutput { // se verifica si la salida de X nodo es igual a la del nodo padre, si se cumple entonces son hermanos
-								if nodeAux[i].inputs == nil { // si no tiene input, esto quiere decir que es un hermano que no tiene padre, por lo anterior es un CN
+								if nodeAux[i].inputs == nil { // si no tiene input, esto quiere decir que es un hermano que no tiene padre, por lo anterior es un C1
 									brothers = append(brothers, nodeAux[i])
-								} else { // si tiene padre, esto implica que no es un CN, por lo anterior se rompe el ciclo y se sigue buscando el CN
+								} else { // si tiene padre, esto implica que no es un C1, por lo anterior se rompe el ciclo y se sigue buscando el C1
 									brothers = nil
 									father = false
 									break
@@ -268,7 +274,7 @@ func sortNodes(nodeAux []Node) []Node {
 							}
 						}
 					}
-					if !father { // como no es CN se rompe el otro ciclo
+					if !father { // como no es C1 se rompe el otro ciclo
 						break
 					}
 

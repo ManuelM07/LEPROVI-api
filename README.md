@@ -1,4 +1,4 @@
-# Visual-Programming-api
+# LEPROVI - api
 
 This api is responsible for storing the structure of the programs, in a [Dgraph](https://dgraph.io/) database, so that they can later be consulted, through the endpoints, in turn, it is responsible for transforming the structure of the nodes to a structure of a specific programming language and execute it through the [JDoodle](https://www.jdoodle.com/) api.
 
@@ -47,5 +47,5 @@ Run the following command:
 go run . 
 ```
 
-Now the API will run on port 10000.
+Now the API will run on port 10000
 ```http://localhost:10000```

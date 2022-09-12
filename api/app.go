@@ -35,7 +35,7 @@ func main() {
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte("Api Visual Programming"))
+		w.Write([]byte("LEPROVI api"))
 	})
 
 	r.Mount("/posts", postsResource{}.Routes())
