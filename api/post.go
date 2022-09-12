@@ -35,9 +35,6 @@ func (rs postsResource) Routes() chi.Router {
 	r.Route("/{id}", func(r chi.Router) {
 		r.Use(PostCtx)
 		r.Get("/", rs.Get) // GET /posts/{id} - Read a single post by :id.
-		//r.Put("/", rs.Update)    // PUT /posts/{id} - Update a single post by :id.
-		//r.Delete("/", rs.Delete) // DELETE /posts/{id} - Delete a single post by :id.
-		// post - run
 	})
 
 	return r
@@ -90,9 +87,6 @@ func (rs postsResource) Run(w http.ResponseWriter, r *http.Request) {
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	dataResp := ProgramX{}
 	json.Unmarshal([]byte(string(reqBody)), &dataResp)
-	//respCode := fmt.Sprintf("%s", reqBody)
-	//languaje := "nodejs" //python3
-	//versionIndex := "4" //4
 
 	data := map[string]interface{}{
 		"clientId":     goDotEnvVariable("CLIENT_ID"),
