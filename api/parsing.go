@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 )
 
 var nodes []Node
@@ -14,7 +15,7 @@ type Node struct {
 	inputs  interface{}
 	outputs interface{}
 	data    interface{}
-	//father 	interface{}
+	posY    float64
 }
 
 /*
@@ -32,10 +33,12 @@ func mapJson(data map[string]interface{}, languaje string) string {
 			inputs:  element.(map[string]interface{})["inputs"],
 			outputs: element.(map[string]interface{})["outputs"],
 			data:    element.(map[string]interface{})["data"],
-			//posY:    element.(map[string]interface{})["pos_y"]
+			posY:    element.(map[string]interface{})["pos_y"].(float64),
 		}
 		nodes = append(nodes, node)
 	}
+	sort.Slice(nodes, func(i, j int) bool { return nodes[i].posY < nodes[j].posY }) // Permite ordenar los nodos por su posición en Y, esto es util cuando se tiene mas de un bloque o conjunto de nodos
+	nodes = sortNodes(nodes)
 	if languaje == "nodejs" {
 		return startParsingJs()
 	}
@@ -49,7 +52,6 @@ retorna la variable code, que contiene el codigo formado apartir de los nodos.
 */
 func startParsing() string {
 	var countMath = map[string]int{"add": 0, "less": 0, "mult": 0, "divide": 0, "module": 0}
-	nodes = sortNodes(nodes)
 	var code string
 
 	for k := 0; k < len(nodes); k++ {

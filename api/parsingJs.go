@@ -11,7 +11,6 @@ retorna la variable code, que contiene el codigo formado apartir de los nodos.
 */
 func startParsingJs() string {
 	var countMath = map[string]int{"add": 0, "less": 0, "mult": 0, "divide": 0, "module": 0}
-	nodes = sortNodes(nodes)
 	var code string
 
 	for k := 0; k < len(nodes); k++ {
