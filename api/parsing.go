@@ -8,6 +8,7 @@ import (
 var nodes []Node
 var typeOperation = map[string]string{"add": "+", "less": "-", "mult": "*", "divide": "/", "module": "%"}                                   // se guardan todos los tipos de operaciones matematicas
 var typeComparison = map[string]string{"equals": "==", "greater": ">", "less": "<", "greaterOrE": ">=", "lessOrE": "<=", "different": "!="} // se guardan todos los operadores de comparación
+var prompter string
 
 type Node struct {
 	id      string
@@ -15,7 +16,7 @@ type Node struct {
 	inputs  interface{}
 	outputs interface{}
 	data    interface{}
-	posY    float64
+	posX    float64
 }
 
 /*
@@ -33,12 +34,12 @@ func mapJson(data map[string]interface{}, languaje string) string {
 			inputs:  element.(map[string]interface{})["inputs"],
 			outputs: element.(map[string]interface{})["outputs"],
 			data:    element.(map[string]interface{})["data"],
-			posY:    element.(map[string]interface{})["pos_y"].(float64),
+			posX:    element.(map[string]interface{})["pos_x"].(float64),
 		}
 		nodes = append(nodes, node)
 	}
-	sort.Slice(nodes, func(i, j int) bool { return nodes[i].posY < nodes[j].posY }) // Permite ordenar los nodos por su posición en Y, esto es util cuando se tiene mas de un bloque o conjunto de nodos
-	nodes = sortNodes(nodes)
+	sort.Slice(nodes, func(i, j int) bool { return nodes[i].posX < nodes[j].posX }) // Permite ordenar los nodos por su posición en X, esto es util cuando se tiene mas de un bloque o conjunto de nodos
+	//nodes = sortNodes(nodes)
 	if languaje == "nodejs" {
 		return startParsingJs()
 	}
@@ -53,8 +54,20 @@ retorna la variable code, que contiene el codigo formado apartir de los nodos.
 func startParsing() string {
 	var countMath = map[string]int{"add": 0, "less": 0, "mult": 0, "divide": 0, "module": 0}
 	var code string
+	prompter = ""
 
 	for k := 0; k < len(nodes); k++ {
+		if nodes[k].inputs.(map[string]interface{})["input_1"] == nil || len(nodes[k].inputs.(map[string]interface{})["input_1"].(map[string]interface{})["connections"].([]interface{})) == 0 {
+			if nodes[k].name != "NodeMoveLeft" {
+				prompter = ""
+			}
+		}
+		if len(prompter) > 0 {
+			if nodes[k].name == "NodeMoveLeft" {
+				prompter = string(prompter[0 : len(prompter)-1]) // elimina una tabulación
+			}
+		}
+
 		if nodes[k].name == "NodeMath" {
 			methodNode := fmt.Sprintf("%v", nodes[k].data.(map[string]interface{})["data"].(map[string]interface{})["method"])
 			if countMath[methodNode] == 0 { // esta condicción se hace con el fin de controlar las funciones Math, si una función ya fue creada, no es necesario volver a crearla.
@@ -67,11 +80,15 @@ func startParsing() string {
 			code += print(nodes[k].inputs.(map[string]interface{}))
 		} else if nodes[k].name == "NodeIf" {
 			code += nodeIf(k)
+			prompter += "\t"
 		} else if nodes[k].name == "NodeElse" {
 			code += nodeElse(k)
 		} else if nodes[k].name == "NodeFor" {
 			code += nodeFor(k)
-		}
+
+		} /*else if nodes[k].name == "NodeNumber" {
+			code += nodeNumber(k)
+		}*/
 	}
 	return code
 }
@@ -80,50 +97,52 @@ func mathOperation(option string, idOutput int) string {
 	operation := fmt.Sprintf("%v", nodes[idOutput].data.(map[string]interface{})["data"].(map[string]interface{})["method"])
 	inputs := nodes[idOutput].inputs.(map[string]interface{})
 	if option == "body" {
-		return fmt.Sprintf("def %s(a, b):\n\treturn a%sb\n", operation, typeOperation[operation])
+		return fmt.Sprintf("%[1]sdef %[2]s(a, b):\n\t%[1]sreturn a%[3]sb\n", prompter, operation, typeOperation[operation])
 	} else {
 		node1 := findInput(inputs["input_1"])
 		node2 := findInput(inputs["input_2"])
-		nodePos1 := findNode(node1, nodes)
-		nodePos2 := findNode(node2, nodes)
+		nodePos1 := findNode(node1[0], nodes)
+		nodePos2 := findNode(node2[0], nodes)
 		return fmt.Sprintf("%s(%s, %s)", operation, typeNode(nodes[nodePos1], nodePos1), typeNode(nodes[nodePos2], nodePos2))
 	}
 }
 
 func assign(pos int, inputs map[string]interface{}) string {
-	node1 := findInput(inputs["input_1"])
-	idNode := findNode(node1, nodes)
-	varName := nodes[pos].data.(map[string]interface{})["url"]
-	if nodes[idNode].name == "NodeMath" {
-		answer := mathOperation("", idNode)
-		return fmt.Sprintf("%s = %s\n", varName, answer)
-	} else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" || nodes[idNode].name == "NodeFor" {
-		answer := valueAssigned(idNode) // Para el caso del else y for, se puede reutilizar la funcion de nodeIf
-		return fmt.Sprintf("\t%s = %s\n", varName, answer)
-	} else if nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" || nodes[idNode].name == "NodeAssign" {
-		answer := valueAssigned(idNode)
-		return fmt.Sprintf("%s = %s\n", varName, answer)
-	} else if nodes[idNode].name == "NodeStringOp" {
-		answer := stringOperations(idNode)
-		return fmt.Sprintf("%s = %s\n", varName, answer)
+	if len(inputs["input_1"].(map[string]interface{})["connections"].([]interface{})) != 0 {
+		node1 := findInput(inputs["input_1"])
+		idNode := findNode(node1[0], nodes)
+		varName := nodes[pos].data.(map[string]interface{})["url"]
+		if nodes[idNode].name == "NodeMath" {
+			answer := mathOperation("", idNode)
+			return fmt.Sprintf("%s%s = %s", prompter, varName, answer)
+		} else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" {
+			answer := valueAssigned(idNode) // Para el caso del else y for, se puede reutilizar la funcion de nodeIf
+			return fmt.Sprintf("%s\t%s = %s\n", prompter, varName, answer)
+		} else if nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" || nodes[idNode].name == "NodeAssign" {
+			answer := valueAssigned(idNode)
+			return fmt.Sprintf("%s%s = %s\n", prompter, varName, answer)
+		} else if nodes[idNode].name == "NodeStringOp" {
+			answer := stringOperations(idNode)
+			return fmt.Sprintf("%s%s = %s", prompter, varName, answer)
+		}
 	}
 	return ""
 }
 
 func print(inputs map[string]interface{}) string {
 	node1 := findInput(inputs["input_1"])
-	idNode := findNode(node1, nodes)
+	idNode := findNode(node1[0], nodes)
 	if nodes[idNode].name == "NodeMath" {
 		answer := mathOperation("n", idNode)
-		return fmt.Sprintf("print(%s)\n", answer)
+		return fmt.Sprintf("%sprint(%s)\n", prompter, answer)
 	} else if nodes[idNode].name == "NodeAssign" || nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" {
 		answer := valueAssigned(idNode)
-		return fmt.Sprintf("print(%s)\n", answer)
+		return fmt.Sprintf("%sprint(%s)\n", prompter, answer)
 	} else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" || nodes[idNode].name == "NodeFor" {
 		answer := valueAssigned(idNode)
-		return fmt.Sprintf("\tprint(%s)\n", answer)
+		return fmt.Sprintf("%sprint(%s)\n", prompter, answer)
 	} else if nodes[idNode].name == "NodeStringOp" {
-		return fmt.Sprintf("print(%s)\n", stringOperations(idNode))
+		return fmt.Sprintf("%sprint(%s)\n", prompter, stringOperations(idNode))
 	}
 	return ""
 }
@@ -133,23 +152,23 @@ func nodeIf(idNode int) string {
 	node1 := findInput(inputs["input_1"])
 	node2 := findInput(inputs["input_2"])
 	node3 := findInput(inputs["input_3"])
-	nodePos1 := findNode(node1, nodes)
-	nodePos2 := findNode(node2, nodes)
-	nodePos3 := findNode(node3, nodes)
-	return fmt.Sprintf("if %s %s %s:\n", typeNode(nodes[nodePos1], nodePos1), typeNode(nodes[nodePos2], nodePos2), typeNode(nodes[nodePos3], nodePos3))
+	nodePos1 := findNode(node1[0], nodes)
+	nodePos2 := findNode(node2[0], nodes)
+	nodePos3 := findNode(node3[0], nodes)
+	return fmt.Sprintf("%sif %s %s %s:\n", prompter, typeNode(nodes[nodePos1], nodePos1), typeNode(nodes[nodePos2], nodePos2), typeNode(nodes[nodePos3], nodePos3))
 }
 
 func nodeElse(idNode int) string {
-	return "else:\n"
+	return fmt.Sprintf("%selse:\n", prompter)
 }
 
 func nodeFor(idNode int) string {
 	inputs := nodes[idNode].inputs.(map[string]interface{})
 	node1 := findInput(inputs["input_1"])
 	node2 := findInput(inputs["input_2"])
-	nodePos1 := findNode(node1, nodes)
-	nodePos2 := findNode(node2, nodes)
-	return fmt.Sprintf("for i in range(%s, %s):\n", typeNode(nodes[nodePos1], nodePos1), typeNode(nodes[nodePos2], nodePos2))
+	nodePos1 := findNode(node1[0], nodes)
+	nodePos2 := findNode(node2[0], nodes)
+	return fmt.Sprintf("%sfor i in range(%s, %s):\n", prompter, typeNode(nodes[nodePos1], nodePos1), typeNode(nodes[nodePos2], nodePos2))
 }
 
 func comparison(idOutput int) string {
@@ -161,7 +180,7 @@ func stringOperations(idNode int) string {
 	operation := fmt.Sprintf("%v", nodes[idNode].data.(map[string]interface{})["data"].(map[string]interface{})["method"])
 	inputs := nodes[idNode].inputs.(map[string]interface{})
 	node1 := findInput(inputs["input_1"])
-	nodePos1 := findNode(node1, nodes)
+	nodePos1 := findNode(node1[0], nodes)
 	if operation == "len" {
 		return fmt.Sprintf("len(%v)", typeNode(nodes[nodePos1], nodePos1))
 	} else if operation == "first" {
@@ -178,8 +197,8 @@ func stringOperations(idNode int) string {
 Esta función se encarga de buscar la posición de un nodo en un array(slice) de nodos.
 */
 func findNode(id string, nodesX []Node) int {
-	for k := 0; k < len(nodes); k++ {
-		if nodes[k].id == id {
+	for k := 0; k < len(nodesX); k++ {
+		if nodesX[k].id == id {
 			return k
 		}
 	}
@@ -189,8 +208,13 @@ func findNode(id string, nodesX []Node) int {
 /*
 Esta función se encarga de buscar un nodo input en una interface de inputs, a su vez también sirve para buscar un nodo outputs.
 */
-func findInput(input interface{}) string {
-	return fmt.Sprintf("%v", input.(map[string]interface{})["connections"].([]interface{})[0].(map[string]interface{})["node"]) // fmt.Sprintf("%v", node1) permite convertir una interfaz en string
+func findInput(input interface{}) []string {
+	var sliceInputs []string
+	inputs := input.(map[string]interface{})["connections"].([]interface{})
+	for k := 0; k < len(inputs); k++ {
+		sliceInputs = append(sliceInputs, fmt.Sprintf("%v", inputs[k].(map[string]interface{})["node"]))
+	}
+	return sliceInputs //fmt.Sprintf("%v", inputs.(map[string]interface{})["node"]) // fmt.Sprintf("%v", node1) permite convertir una interfaz en string
 }
 
 /*
@@ -236,13 +260,16 @@ func sortNodes(nodeAux []Node) []Node {
 	var father bool     // se usa para identificar si es un C1
 	var brothers []Node // es un slice de Node, donde se guardaran los hermanos para cada iteración
 	n := -1             // n será una variable acumuladora, por cada nodo que se agregue a sort(Node), esta aumentará en 1
+	var auxOutputs bool
 
 	for {
+		fmt.Println("Nodes:", sort)
 		if len(nodeAux) == 1 { // Si queda un solo nodo, este se agrega y se rompe el ciclo
 			sort = append(sort, nodeAux[0])
 			break
-		} else if isIf && nodeAux[posI].name == "NodeElse" || !isIf && nodeAux[posI].inputs.(map[string]interface{})["input_1"] == nil { // se busca el padre del arbol
+		} else if isIf && nodeAux[posI].name == "NodeElse" || !isIf && len(nodeAux[posI].inputs.(map[string]interface{})["input_1"].(map[string]interface{})["connections"].([]interface{})) == 0 || auxOutputs { // se busca el padre del arbol
 			//if nodeAux[posI].name == "NodeAssign"
+			auxOutputs = false
 			father = true
 			isIf = false
 			sort = append(sort, nodeAux[posI])
@@ -256,22 +283,29 @@ func sortNodes(nodeAux []Node) []Node {
 					if len(thisNode.(map[string]interface{})["connections"].([]interface{})) == 0 { // si no tiene conexiones es porque es un nodo print, en este caso se cierra el ciclo
 						break
 					}
-					thisOutput := findInput(thisNode)
+					thisOutput := findInput(thisNode)[0]
 					for i := 0; i < len(nodeAux); i++ { // se busca si ese padre tiene un hermano
 						if nodeAux[i].outputs.(map[string]interface{})["output_1"] == nil || len(nodeAux[i].outputs.(map[string]interface{})["output_1"].(map[string]interface{})["connections"].([]interface{})) != 0 {
+							if nodeAux[i].outputs.(map[string]interface{})["output_1"] != nil && len(nodeAux[i].outputs.(map[string]interface{})["output_1"].(map[string]interface{})["connections"].([]interface{})) > 1 {
+								auxOutputs = true
+							}
 
-							if nodeAux[i].name != "NodePrint" && findInput(nodeAux[i].outputs.(map[string]interface{})["output_1"]) == thisOutput { // se verifica si la salida de X nodo es igual a la del nodo padre, si se cumple entonces son hermanos
-								if nodeAux[i].inputs == nil { // si no tiene input, esto quiere decir que es un hermano que no tiene padre, por lo anterior es un C1
-									brothers = append(brothers, nodeAux[i])
-								} else { // si tiene padre, esto implica que no es un C1, por lo anterior se rompe el ciclo y se sigue buscando el C1
-									brothers = nil
-									father = false
-									break
-								}
-								for j := 0; j < len(brothers); j++ {
-									sort = append(sort, brothers[j])
-									nodeAux = RemoveIndex(nodeAux, findNode(brothers[j].id, nodeAux))
-									n++
+							nodesInpunts := findInput(nodeAux[i].outputs.(map[string]interface{})["output_1"])
+							for p := 0; p < len(nodesInpunts); p++ {
+								if nodeAux[i].name != "NodePrint" && nodesInpunts[p] == thisOutput || len(nodesInpunts) > 1 { // se verifica si la salida de X nodo es igual a la del nodo padre, si se cumple entonces son hermanos
+									if nodeAux[i].inputs == nil || len(nodesInpunts) > 1 { // si no tiene input, esto quiere decir que es un hermano que no tiene padre, por lo anterior es un C1
+										brothers = append(brothers, nodeAux[i])
+									} else { // si tiene padre, esto implica que no es un C1, por lo anterior se rompe el ciclo y se sigue buscando el C1
+										brothers = nil
+										father = false
+										break
+									}
+									for j := 0; j < len(brothers); j++ {
+										fmt.Println("Bros: ", brothers)
+										sort = append(sort, brothers[j])
+										nodeAux = RemoveIndex(nodeAux, findNode(brothers[j].id, nodeAux))
+										n++
+									}
 								}
 							}
 						}
