@@ -48,8 +48,12 @@ func startParsingJs() string {
 			code += printJs(nodes[k].inputs.(map[string]interface{}))
 		} else if nodes[k].name == "NodeIf" {
 			code += nodeIfJs(k)
+			prompter += "\t"
+			closeKey += 1
 		} else if nodes[k].name == "NodeElse" {
 			code += nodeElseJs(k)
+			prompter += "\t"
+			closeKey += 1
 		} else if nodes[k].name == "NodeFor" {
 			code += nodeForJs(k)
 			prompter += "\t"
@@ -57,7 +61,6 @@ func startParsingJs() string {
 		}
 	}
 	if closeKey > 0 { // en caso tal de que no se hayan cerrado todas las llaves, se procede a cerrarlas por medio del for
-		fmt.Println((closeKey))
 		for k := 0; k < closeKey; k++ {
 			if len(prompter) != 0 {
 				prompter = string(prompter[0 : len(prompter)-1])
@@ -91,9 +94,6 @@ func assignJs(pos int, inputs map[string]interface{}) string {
 		if nodes[idNode].name == "NodeMath" {
 			answer := mathOperationJs("", idNode)
 			return fmt.Sprintf("%s%s = %s\n", prompter, varName, answer)
-		} else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" {
-			answer := valueAssigned(idNode) // Para el caso del else, se puede reutilizar la funcion de nodeIf
-			return fmt.Sprintf("%s\t%s = %s\n}\n", prompter, varName, answer)
 		} else if nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" || nodes[idNode].name == "NodeAssign" {
 			answer := valueAssigned(idNode)
 			return fmt.Sprintf("%s%s = %s\n", prompter, varName, answer)
@@ -147,10 +147,10 @@ func nodeForJs(idNode int) string {
 	return fmt.Sprintf("%sfor (let index = %s; index < %s; index++) {\n", prompter, typeNodeJs(nodes[nodePos1], nodePos1), typeNodeJs(nodes[nodePos2], nodePos2))
 }
 
-func comparisonJs(idOutput int) string {
+/*func comparisonJs(idOutput int) string {
 	comparison := fmt.Sprintf("%v", nodes[idOutput].data.(map[string]interface{})["data"].(map[string]interface{})["method"])
 	return typeComparison[comparison]
-}
+}*/
 
 func stringOperationsJs(idNode int) string {
 	operation := fmt.Sprintf("%v", nodes[idNode].data.(map[string]interface{})["data"].(map[string]interface{})["method"])

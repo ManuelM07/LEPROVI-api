@@ -83,9 +83,10 @@ func startParsing() string {
 			prompter += "\t"
 		} else if nodes[k].name == "NodeElse" {
 			code += nodeElse(k)
+			prompter += "\t"
 		} else if nodes[k].name == "NodeFor" {
 			code += nodeFor(k)
-
+			prompter += "\t"
 		} /*else if nodes[k].name == "NodeNumber" {
 			code += nodeNumber(k)
 		}*/
@@ -115,9 +116,6 @@ func assign(pos int, inputs map[string]interface{}) string {
 		if nodes[idNode].name == "NodeMath" {
 			answer := mathOperation("", idNode)
 			return fmt.Sprintf("%s%s = %s", prompter, varName, answer)
-		} else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" {
-			answer := valueAssigned(idNode) // Para el caso del else y for, se puede reutilizar la funcion de nodeIf
-			return fmt.Sprintf("%s\t%s = %s\n", prompter, varName, answer)
 		} else if nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" || nodes[idNode].name == "NodeAssign" {
 			answer := valueAssigned(idNode)
 			return fmt.Sprintf("%s%s = %s\n", prompter, varName, answer)
@@ -125,6 +123,10 @@ func assign(pos int, inputs map[string]interface{}) string {
 			answer := stringOperations(idNode)
 			return fmt.Sprintf("%s%s = %s", prompter, varName, answer)
 		}
+		/*else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" {
+			answer := valueAssigned(idNode) // Para el caso del else y for, se puede reutilizar la funcion de nodeIf
+			return fmt.Sprintf("%s\t%s = %s\n", prompter, varName, answer)
+		}*/
 	}
 	return ""
 }
@@ -253,7 +255,7 @@ C1, será el nodo que inicia las relación entre los nodos del conjunto y CN
 el nodo que las finaliza.
 Fanalmente retorna el conjunto de nodos ordenados.
 */
-func sortNodes(nodeAux []Node) []Node {
+/*func sortNodes(nodeAux []Node) []Node {
 	var sort []Node
 	var posI int
 	var isIf bool
@@ -336,14 +338,14 @@ func sortNodes(nodeAux []Node) []Node {
 		posI++
 	}
 	return sort
-}
+}*/
 
 /*
 Esta función se encarga de eliminar un elemento de una lista.
 */
-func RemoveIndex(s []Node, index int) []Node {
+/*func RemoveIndex(s []Node, index int) []Node {
 	if len(s) == 1 {
 		return nil
 	}
 	return append(s[:index], s[index+1:]...)
-}
+}*/
