@@ -76,7 +76,7 @@ func mathOperationJs(option string, idOutput int) string {
 	operation := fmt.Sprintf("%v", nodes[idOutput].data.(map[string]interface{})["data"].(map[string]interface{})["method"])
 	inputs := nodes[idOutput].inputs.(map[string]interface{})
 	if option == "body" {
-		return fmt.Sprintf("%[1]sfunction %[2]s(a, b) {\n\t%[1]sreturn a%[3]sb\n}\n", prompter, operation, typeOperation[operation])
+		return fmt.Sprintf("%[1]sfunction %[2]s(a, b) {\n\t%[1]sreturn a%[3]sb\n%[1]s}\n", prompter, operation, typeOperation[operation])
 	} else {
 		node1 := findInput(inputs["input_1"])
 		node2 := findInput(inputs["input_2"])
@@ -147,11 +147,6 @@ func nodeForJs(idNode int) string {
 	return fmt.Sprintf("%sfor (let index = %s; index < %s; index++) {\n", prompter, typeNodeJs(nodes[nodePos1], nodePos1), typeNodeJs(nodes[nodePos2], nodePos2))
 }
 
-/*func comparisonJs(idOutput int) string {
-	comparison := fmt.Sprintf("%v", nodes[idOutput].data.(map[string]interface{})["data"].(map[string]interface{})["method"])
-	return typeComparison[comparison]
-}*/
-
 func stringOperationsJs(idNode int) string {
 	operation := fmt.Sprintf("%v", nodes[idNode].data.(map[string]interface{})["data"].(map[string]interface{})["method"])
 	inputs := nodes[idNode].inputs.(map[string]interface{})
@@ -167,7 +162,7 @@ func stringOperationsJs(idNode int) string {
 	return ""
 }
 
-//--------------------------- Funciones auxiliares ---------------------------\\
+//--------------------------- Funciones auxiliares ---------------------------//
 
 /*
 Esta función se encarga de recibir un nodo y retornar su respuesta, dependiendo el tipo de nodo

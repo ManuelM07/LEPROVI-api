@@ -87,9 +87,7 @@ func startParsing() string {
 		} else if nodes[k].name == "NodeFor" {
 			code += nodeFor(k)
 			prompter += "\t"
-		} /*else if nodes[k].name == "NodeNumber" {
-			code += nodeNumber(k)
-		}*/
+		}
 	}
 	return code
 }
@@ -115,7 +113,7 @@ func assign(pos int, inputs map[string]interface{}) string {
 		varName := nodes[pos].data.(map[string]interface{})["url"]
 		if nodes[idNode].name == "NodeMath" {
 			answer := mathOperation("", idNode)
-			return fmt.Sprintf("%s%s = %s", prompter, varName, answer)
+			return fmt.Sprintf("%s%s = %s\n", prompter, varName, answer)
 		} else if nodes[idNode].name == "NodeNumber" || nodes[idNode].name == "NodeString" || nodes[idNode].name == "NodeAssign" {
 			answer := valueAssigned(idNode)
 			return fmt.Sprintf("%s%s = %s\n", prompter, varName, answer)
@@ -193,7 +191,7 @@ func stringOperations(idNode int) string {
 	return ""
 }
 
-//--------------------------- Funciones auxiliares ---------------------------\\
+//--------------------------- Funciones auxiliares ---------------------------//
 
 /*
 Esta función se encarga de buscar la posición de un nodo en un array(slice) de nodos.
@@ -248,104 +246,3 @@ func valueAssigned(posNode int) string {
 	}
 	return fmt.Sprintf("%v", nodes[posNode].data.(map[string]interface{})["url"])
 }
-
-/*
-Esta función se encarga de ordenar los nodos. Siendo C un conjunto de nodos,
-C1, será el nodo que inicia las relación entre los nodos del conjunto y CN
-el nodo que las finaliza.
-Fanalmente retorna el conjunto de nodos ordenados.
-*/
-/*func sortNodes(nodeAux []Node) []Node {
-	var sort []Node
-	var posI int
-	var isIf bool
-	var father bool     // se usa para identificar si es un C1
-	var brothers []Node // es un slice de Node, donde se guardaran los hermanos para cada iteración
-	n := -1             // n será una variable acumuladora, por cada nodo que se agregue a sort(Node), esta aumentará en 1
-	var auxOutputs bool
-
-	for {
-		fmt.Println("Nodes:", sort)
-		if len(nodeAux) == 1 { // Si queda un solo nodo, este se agrega y se rompe el ciclo
-			sort = append(sort, nodeAux[0])
-			break
-		} else if isIf && nodeAux[posI].name == "NodeElse" || !isIf && len(nodeAux[posI].inputs.(map[string]interface{})["input_1"].(map[string]interface{})["connections"].([]interface{})) == 0 || auxOutputs { // se busca el padre del arbol
-			//if nodeAux[posI].name == "NodeAssign"
-			auxOutputs = false
-			father = true
-			isIf = false
-			sort = append(sort, nodeAux[posI])
-			nodeAux = RemoveIndex(nodeAux, posI)
-			n++
-
-			thisNode := sort[n].outputs.(map[string]interface{})["output_1"]
-			for {
-				brothers = nil
-				if thisNode != nil { // Para tener un hermano, antes debe tener una salida
-					if len(thisNode.(map[string]interface{})["connections"].([]interface{})) == 0 { // si no tiene conexiones es porque es un nodo print, en este caso se cierra el ciclo
-						break
-					}
-					thisOutput := findInput(thisNode)[0]
-					for i := 0; i < len(nodeAux); i++ { // se busca si ese padre tiene un hermano
-						if nodeAux[i].outputs.(map[string]interface{})["output_1"] == nil || len(nodeAux[i].outputs.(map[string]interface{})["output_1"].(map[string]interface{})["connections"].([]interface{})) != 0 {
-							if nodeAux[i].outputs.(map[string]interface{})["output_1"] != nil && len(nodeAux[i].outputs.(map[string]interface{})["output_1"].(map[string]interface{})["connections"].([]interface{})) > 1 {
-								auxOutputs = true
-							}
-
-							nodesInpunts := findInput(nodeAux[i].outputs.(map[string]interface{})["output_1"])
-							for p := 0; p < len(nodesInpunts); p++ {
-								if nodeAux[i].name != "NodePrint" && nodesInpunts[p] == thisOutput || len(nodesInpunts) > 1 { // se verifica si la salida de X nodo es igual a la del nodo padre, si se cumple entonces son hermanos
-									if nodeAux[i].inputs == nil || len(nodesInpunts) > 1 { // si no tiene input, esto quiere decir que es un hermano que no tiene padre, por lo anterior es un C1
-										brothers = append(brothers, nodeAux[i])
-									} else { // si tiene padre, esto implica que no es un C1, por lo anterior se rompe el ciclo y se sigue buscando el C1
-										brothers = nil
-										father = false
-										break
-									}
-									for j := 0; j < len(brothers); j++ {
-										fmt.Println("Bros: ", brothers)
-										sort = append(sort, brothers[j])
-										nodeAux = RemoveIndex(nodeAux, findNode(brothers[j].id, nodeAux))
-										n++
-									}
-								}
-							}
-						}
-					}
-					if !father { // como no es C1 se rompe el otro ciclo
-						break
-					}
-
-					childNodePos := findNode(thisOutput, nodeAux)
-					if childNodePos == -1 { // si se obtiene como resultado -1, esto nos indica que ya no hay mas relaciones en ese conjuto de nodos, por lo anterior se rompe el ciclo
-						break
-					} else if nodeAux[childNodePos].name == "NodeIf" { // se verifica si es un nodoIf
-						isIf = true
-					}
-					thisNode = nodeAux[childNodePos].outputs.(map[string]interface{})["output_1"]
-					sort = append(sort, nodeAux[childNodePos])
-					nodeAux = RemoveIndex(nodeAux, childNodePos)
-					n++
-				} else { // si el nodo prensente en thisNode es nulo, entonces se rompe el ciclo
-					break
-				}
-			}
-			posI = -1
-		}
-		if len(nodeAux) == 0 {
-			break
-		}
-		posI++
-	}
-	return sort
-}*/
-
-/*
-Esta función se encarga de eliminar un elemento de una lista.
-*/
-/*func RemoveIndex(s []Node, index int) []Node {
-	if len(s) == 1 {
-		return nil
-	}
-	return append(s[:index], s[index+1:]...)
-}*/
