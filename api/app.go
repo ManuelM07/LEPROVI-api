@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	port := "10000" // 10000
+	port := "10000"
 
 	if fromEnv := os.Getenv("PORT"); fromEnv != "" {
 		port = fromEnv

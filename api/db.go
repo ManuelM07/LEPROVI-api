@@ -9,6 +9,7 @@ import (
 	"github.com/dgraph-io/dgo/v210"
 	"github.com/dgraph-io/dgo/v210/protos/api"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type Program struct {
@@ -26,7 +27,7 @@ type dataProgramUp struct {
 
 func start_dgraph(option int, data_resp string) string {
 
-	conn, err := grpc.Dial("127.0.0.1:9080", grpc.WithInsecure())
+	conn, err := grpc.Dial("127.0.0.1:9080", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal("While trying to dial gRPC")
 	}
@@ -37,10 +38,9 @@ func start_dgraph(option int, data_resp string) string {
 
 	if option == 1 { // Mutation, se crea un nuevo programa
 
-		// se convierte el idx(string) -> en una estructura Program
+		// se convierte el data(string) -> en una estructura Program
 		data := Program{}
 		json.Unmarshal([]byte(data_resp), &data)
-		fmt.Println(data)
 
 		op := &api.Operation{}
 		op.Schema = `
