@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 )
 
 type postsResource struct{}
+type ctxKey struct{}
 
 type ProgramX struct {
 	Code         string
@@ -24,6 +24,11 @@ type ProgramUnCode struct {
 	Languaje string
 }
 
+type PrograUpdate struct {
+	Uid  string
+	Body string
+}
+
 func (rs postsResource) Routes() chi.Router {
 	r := chi.NewRouter()
 
@@ -31,6 +36,7 @@ func (rs postsResource) Routes() chi.Router {
 	r.Post("/", rs.Create)            // POST /posts - Create a new post.
 	r.Post("/program", rs.GetProgram) // POST /posts - Get program.
 	r.Post("/run", rs.Run)            // POST /posts - Run program.
+	r.Put("/", rs.Update)
 
 	r.Route("/{id}", func(r chi.Router) {
 		r.Use(PostCtx)
@@ -53,7 +59,7 @@ func (rs postsResource) List(w http.ResponseWriter, r *http.Request) {
 
 // Request Handler - POST /posts - Crear nuevo programa.
 func (rs postsResource) Create(w http.ResponseWriter, r *http.Request) {
-	reqBody, _ := ioutil.ReadAll(r.Body)
+	reqBody, _ := io.ReadAll(r.Body)
 	resp := strings.NewReader(start_dgraph(1, string(reqBody)))
 
 	w.Header().Set("Content-Type", "application/json")
@@ -66,7 +72,7 @@ func (rs postsResource) Create(w http.ResponseWriter, r *http.Request) {
 
 // Obtener programa
 func (rs postsResource) GetProgram(w http.ResponseWriter, r *http.Request) {
-	reqBody, _ := ioutil.ReadAll(r.Body)
+	reqBody, _ := io.ReadAll(r.Body)
 	dataResp := ProgramUnCode{}
 	json.Unmarshal([]byte(string(reqBody)), &dataResp)
 
@@ -84,7 +90,7 @@ func (rs postsResource) GetProgram(w http.ResponseWriter, r *http.Request) {
 
 // Run, ejecuta un nuevo programa haciendo uso de la api de jdoodle
 func (rs postsResource) Run(w http.ResponseWriter, r *http.Request) {
-	reqBody, _ := ioutil.ReadAll(r.Body)
+	reqBody, _ := io.ReadAll(r.Body)
 	dataResp := ProgramX{}
 	json.Unmarshal([]byte(string(reqBody)), &dataResp)
 
@@ -120,16 +126,29 @@ func (rs postsResource) Run(w http.ResponseWriter, r *http.Request) {
 // Crea un nuevo contexto en ctx, el cual asocia el valor del id
 func PostCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), "id", chi.URLParam(r, "id"))
+		ctx := context.WithValue(r.Context(), ctxKey{}, chi.URLParam(r, "id"))
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 // Request Handler - GET /posts/{id} - leer y mostrar un programa por :id.
 func (rs postsResource) Get(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("id").(string) //obtener id
+	id := r.Context().Value(ctxKey{}).(string) //obtener id
 
 	resp := strings.NewReader(start_dgraph(2, id))
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if _, err := io.Copy(w, resp); err != nil {
+		return
+	}
+}
+
+func (rs postsResource) Update(w http.ResponseWriter, r *http.Request) {
+	//id := r.Context().Value("id").(string) //obtener id
+	reqBody, _ := io.ReadAll(r.Body)
+
+	resp := strings.NewReader(start_dgraph(4, string(reqBody)))
 
 	w.Header().Set("Content-Type", "application/json")
 
