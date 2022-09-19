@@ -19,6 +19,11 @@ type Program struct {
 	Languaje    string `json:"languaje,omitempty"`
 }
 
+type dataProgramUp struct {
+	Uid  string
+	Body string
+}
+
 func start_dgraph(option int, data_resp string) string {
 
 	conn, err := grpc.Dial("127.0.0.1:9080", grpc.WithInsecure())
@@ -126,6 +131,34 @@ func start_dgraph(option int, data_resp string) string {
 		}
 
 		return string(resp.Json)
+	}
+
+	if option == 4 { // Mutation, se edita un programa
+
+		data := dataProgramUp{}
+		json.Unmarshal([]byte(data_resp), &data)
+		fmt.Println((data))
+
+		q := `query Me($idx: string){
+			  v as var(func: uid($idx))
+			}`
+
+		mu := &api.Mutation{
+			SetNquads: []byte(fmt.Sprintf(`uid(v) <body> %q .`, data.Body)),
+		}
+
+		req := &api.Request{
+			Query:     q,
+			Mutations: []*api.Mutation{mu},
+			CommitNow: true,
+			Vars:      map[string]string{"$idx": data.Uid},
+		}
+
+		if _, err := dg.NewTxn().Do(context.Background(), req); err != nil {
+			log.Fatal(err)
+		}
+
+		return "{success: Successfully updated the programa.}"
 	}
 	return ""
 }
