@@ -48,7 +48,7 @@ func (rs postsResource) Routes() chi.Router {
 
 // Request Handler - GET /posts - leer y listar todos los programas.
 func (rs postsResource) List(w http.ResponseWriter, r *http.Request) {
-	resp := strings.NewReader(start_dgraph(3, ""))
+	resp := strings.NewReader(listPrograms())
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -60,7 +60,7 @@ func (rs postsResource) List(w http.ResponseWriter, r *http.Request) {
 // Request Handler - POST /posts - Crear nuevo programa.
 func (rs postsResource) Create(w http.ResponseWriter, r *http.Request) {
 	reqBody, _ := io.ReadAll(r.Body)
-	resp := strings.NewReader(start_dgraph(1, string(reqBody)))
+	resp := strings.NewReader(createProgram(string(reqBody)))
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -135,7 +135,7 @@ func PostCtx(next http.Handler) http.Handler {
 func (rs postsResource) Get(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value(ctxKey{}).(string) //obtener id
 
-	resp := strings.NewReader(start_dgraph(2, id))
+	resp := strings.NewReader(getProgram(id))
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -148,7 +148,7 @@ func (rs postsResource) Update(w http.ResponseWriter, r *http.Request) {
 	//id := r.Context().Value("id").(string) //obtener id
 	reqBody, _ := io.ReadAll(r.Body)
 
-	resp := strings.NewReader(start_dgraph(4, string(reqBody)))
+	resp := strings.NewReader(updateProgram(string(reqBody)))
 
 	w.Header().Set("Content-Type", "application/json")
 
