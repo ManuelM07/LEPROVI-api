@@ -48,7 +48,11 @@ func (rs postsResource) Routes() chi.Router {
 
 // Request Handler - GET /posts - leer y listar todos los programas.
 func (rs postsResource) List(w http.ResponseWriter, r *http.Request) {
-	resp := strings.NewReader(listPrograms())
+	programs, err := listPrograms()
+	if err != nil {
+		panic(err)
+	}
+	resp := strings.NewReader(programs)
 
 	w.Header().Set("Content-Type", "application/json")
 

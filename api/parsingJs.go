@@ -9,7 +9,7 @@ Esta función se encarga de dar inicio al parsing, dependiendo el tipo de nodo, 
 correspondiente y concatenando su resultado en la variable de tipo string code, finalmente está función
 retorna la variable code, que contiene el codigo formado apartir de los nodos.
 */
-func startParsingJs() string {
+func parsingJs() string {
 	var countMath = map[string]int{"add": 0, "less": 0, "mult": 0, "divide": 0, "module": 0}
 	var code string
 	var closeKey int // contador, closeKey indica la cantidad de llaves({) que se deben cerrar
