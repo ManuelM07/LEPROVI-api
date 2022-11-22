@@ -41,9 +41,9 @@ func mapJson(data map[string]interface{}, languaje string) string {
 	sort.Slice(nodes, func(i, j int) bool { return nodes[i].posX < nodes[j].posX }) // Permite ordenar los nodos por su posición en X, esto es util cuando se tiene mas de un bloque o conjunto de nodos
 	//nodes = sortNodes(nodes)
 	if languaje == "nodejs" {
-		return startParsingJs()
+		return parsingJs()
 	}
-	return startParsing()
+	return parsing()
 }
 
 /*
@@ -51,7 +51,7 @@ Esta función se encarga de dar inicio al parsing, dependiendo el tipo de nodo, 
 correspondiente y concatenando su resultado en la variable de tipo string code, finalmente está función
 retorna la variable code, que contiene el codigo formado apartir de los nodos.
 */
-func startParsing() string {
+func parsing() string { // -> parsing
 	var countMath = map[string]int{"add": 0, "less": 0, "mult": 0, "divide": 0, "module": 0}
 	var code string
 	prompter = ""
@@ -121,10 +121,6 @@ func assign(pos int, inputs map[string]interface{}) string {
 			answer := stringOperations(idNode)
 			return fmt.Sprintf("%s%s = %s", prompter, varName, answer)
 		}
-		/*else if nodes[idNode].name == "NodeIf" || nodes[idNode].name == "NodeElse" {
-			answer := valueAssigned(idNode) // Para el caso del else y for, se puede reutilizar la funcion de nodeIf
-			return fmt.Sprintf("%s\t%s = %s\n", prompter, varName, answer)
-		}*/
 	}
 	return ""
 }
