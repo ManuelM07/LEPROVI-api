@@ -111,7 +111,7 @@ func getProgram(idx string) string {
 	return string(resp.Json)
 }
 
-func listPrograms() string {
+func listPrograms() (string, error) {
 	dg, cancel := getDgraphClient()
 	defer cancel()
 
@@ -127,7 +127,7 @@ func listPrograms() string {
 
 	resp, err := dg.NewTxn().Query(context.Background(), q)
 	if err != nil { // mal manejo del error
-		log.Fatal(err)
+		return "", err
 	}
 
 	type Root struct {
@@ -137,10 +137,10 @@ func listPrograms() string {
 	var r Root
 	err = json.Unmarshal(resp.Json, &r)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
-	return string(resp.Json)
+	return string(resp.Json), nil
 }
 
 func updateProgram(data_resp string) string {
